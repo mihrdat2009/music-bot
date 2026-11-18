@@ -11,7 +11,7 @@ logging.basicConfig(
 )
 
 # Токен твоего бота (лучше брать из переменных окружения на Render)
-TOKEN = os.getenv("BOT_TOKEN", "ТВОЙ_ТОКЕН_БОТА")
+TOKEN = os.getenv("BOT_TOKEN", "9209775991:AAF6UA6h_CClMQhi3d09ECQzLlK04TRkCLw")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Отправь мне название трека или ссылку, и я попробую его найти и скачать.")
