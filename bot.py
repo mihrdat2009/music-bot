@@ -1,85 +1,61 @@
-import os
+ import os
 import logging
 from telegram import Update
-from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    MessageHandler,
-    ContextTypes,
-    filters
-)
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 import yt_dlp
 
-TOKEN = "9209775991:AAF6UA6h_CClMQhi3d09ECQzLlK04TRkCLw"
-
+# Включаем логирование
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
+# Токен твоего бота (лучше брать из переменных окружения на Render)
+TOKEN = os.getenv("BOT_TOKEN", "ТВОЙ_ТОКЕН_БОТА")
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🎵 **Mihrdat Music Bot**\n\n"
-        "Отправь мне ссылку на YouTube, и я скачаю трек!"
-    )
+    await update.message.reply_text("Привет! Отправь мне название трека или ссылку, и я попробую его найти и скачать.")
 
-async def handle_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    url = update.message.text.strip()
+async def download_music(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.message.text
+    await update.message.reply_text("🔍 Ищу и скачиваю трек...")
 
-    if not url.startswith(("https://", "http://")):
-        await update.message.reply_text("❌ Неверная ссылка.")
-        return
-
-    await update.message.reply_text("⏳ Скачиваю трек с YouTube, подожди немного...")
-
+    # Настройки yt-dlp с безопасным поиском
     ydl_opts = {
-    'format': 'bestaudio/best',
-    'default_search': 'ytsearch',
-    'noplaylist': True,
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'format': 'bestaudio/best',
+        'default_search': 'ytsearch1',
+        'noplaylist': True,
+        'extract_flat': False,
+        'outtmpl': 'song.%(ext)s',
     }
-    
-    audio_filename = None
+
     try:
-        os.makedirs("downloads", exist_ok=True)
-
+        # Скачивание аудио
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            audio_filename = ydl.prepare_filename(info)
-            
-            duration = int(info.get('duration', 0))
-            title = info.get('title', 'Трек с YouTube')
-            uploader = info.get('uploader', 'Неизвестен автор')
+            info = ydl.extract_info(query, download=True)
+            if 'entries' in info:
+                info = info['entries'][0]
+            filename = ydl.prepare_filename(info)
 
-        with open(audio_filename, 'rb') as audio_file:
-            await update.message.reply_audio(
-                audio=audio_file,
-                performer=uploader,
-                title=title,
-                duration=duration,
-                caption=f"🎵 **{title}**\n👤 Автор: {uploader}\n⏱ Длительность: {duration // 60}:{(duration % 60):02d}"
-            )
+        # Отправка аудио в Telegram
+        with open(filename, 'rb') as audio:
+            await update.message.reply_audio(audio)
+
+        # Удаление файла после отправки
+        os.remove(filename)
 
     except Exception as e:
-        print(e)
+        logging.error(f"Ошибка скачивания: {e}")
         await update.message.reply_text("❌ Ошибка при скачивании трека.")
 
-    finally:
-        if audio_filename and os.path.exists(audio_filename):
-            try:
-                os.remove(audio_filename)
-            except:
-                pass
-
 def main():
-    app = ApplicationBuilder().token(TOKEN).build()
+    application = ApplicationBuilder().token(TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_link))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), download_music))
 
-    print("Mihrdat Music Bot запущен!")
-    app.run_polling()
+    application.run_polling()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
-          
+    
