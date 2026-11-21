@@ -36,16 +36,17 @@ async def download_music(update: Update, context):
     query = update.message.text
     await update.message.reply_text("🔍 Ищу и скачиваю трек...")
 
-            ydl_opts = {
+                ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': 'song.%(ext)s',
-        'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
+        'extractor_args': {'youtube': {'player_client': ['android']}},
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
-            }
+                }
+
 
         
         
