@@ -38,7 +38,8 @@ async def download_music(update: Update, context):
 
     ydl_opts = {
         'format': 'bestaudio/best',
-        'default_search': 'ytsearch1',
+        'default_search': 'scsearch1',
+        
         'outtmpl': 'song.%(ext)s',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
